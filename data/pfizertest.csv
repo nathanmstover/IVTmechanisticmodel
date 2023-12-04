@@ -1,0 +1,3 @@
+Species	Times (hrs)	T7RNAP (nM)	DNA (nM)	ATP (mM)	UTP (mM)	CTP (mM)	GTP (mM)	Cap (mM)	Mg (mM)	PPiase (U/uL)	Buffer (mM)	DTT (mM)	Spermidine (mM)	NA	NU	NC	NG	output yield	outputstd
+2	2	240	83	5.25	5.8	5.3	5.6	4	16.5	0.002	40	10	2	294	162	297	247	0	1
+2	2	240	83	5.25	5.8	5.3	5.6	4	16.5	0	40	10	2	294	162	297	247	0	1
