@@ -60,27 +60,29 @@ The notebook customfittingdemo.ipynb includes an example of this fine-tuning. Re
 
 We demonstrate how to fit our model to new data in the notebook customfittingdemo.jl. We first attempt to predict these new data using the parameters estimated in our original work. 
 
-![pfizerdata_unfitted](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/d1f2157f-2f6d-4d90-b83c-e52214025f4e)
+![pfizerdata_unfitted](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/0eb4472e-d878-4481-bf07-d96965b7998c)
 
 Note that these predictions are incorrect with high uncertainty. Specifically, they are underpredicting the rate of reaction. The key issue here is that we are extrapolating in input space from the data used for calibration. Consider the Akama data of initial reaction rates that was used to develop these parameters. 
 
-![akamafitting](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/fc7e218a-9586-4721-a356-083ae86d7a2b)
+![p1](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/24d200d1-182c-4e4a-8a98-e35fce641ec4)
+
 
 The reaction we are attempting to validate our model on used a total NTP concentration of about 25 mM and a Mg salt concentration of 16.5 mM. This is pretty far outside of the data range that we are calibrating our model on. Visually, it is clear that it is difficult to infer values at 25 mM NTP from the data we have. 
 
 Now we consider adding the Pfizer data to our calibration data and rerunning our parameter estimation process. We get the following fits to the Pfizer data:
-![pfizerdata_fitted](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/890ad05a-432b-4717-9fc4-2cb1d0a8dfbb)
+
+![pfizerdata_fitted](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/f899cc40-1d15-4cf4-a902-ed7ffa697a7e)
 
 Pretty good! We can see how these new parameters affect other parts of our original calibration data. Our predictions for reaction rates are slightly revised.
 
-![finetunedreactionrates](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/1f72aa2b-5da8-4efa-b931-a8fc966e857a)
+![p2](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/6933f58e-c50e-495c-8a9b-d91708d175e8)
 
 In general, we are fitting data collected at high (<10 mM) Mg concentrations better than before, and data at low Mg concentrations worse. The mechanism developed in our work appears to be unable describe both of these regimes accurately, which is the subject of future work. 
 
 ## Hypothesis Testing 
 Now that we have a model that reasonably fits the entire data set we have thrown at it, we can consider using it to answer interesting questions. For example, we can test the effect of removing the in pyrophosphatase enzyme on the pfizer reaction conditions. We simply run the model on a new data file that does not include any real data. See data/pfizertest.csv as an example for how to we do this (we set the time column to the time window we are interested in studying this reaction for, and the output yield column to zero). Our comparison shows that without the pyrophosphatase enzyme, early reaction halting decreases RNA yield, which is consistent with the main thrust of our publication.
 
-![ppiasehypothesistesting](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/f85afe5c-6bbd-44de-99f7-f7fdf565a31e)
+![ppiasehypothesistesting](https://github.com/nathanmstover/IVTmechanisticmodel/assets/97487659/dd3896b7-d339-48f2-9167-55db0938e694)
 
 ## Caveats and Best Practices with Model
 
