@@ -12,7 +12,7 @@ function predictionuncertainty_linearized(speciesindex,α,model,params,parameter
 end
 
 """
-    predictionuncertainty_linearized(speciesindex,α,model,params,parametercovariancematrix, inputs; kargs...)
+predictionuncertainty_linearized_multipoint(speciesindex,α,model,params,parametercovariancematrix, inputs, tvals; kargs...)
 
 For a output species of interest and confidence level (α), return prediction uncertainty of model using linearized approximation for a vector of timepoints.
 """ 
