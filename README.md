@@ -91,7 +91,7 @@ When attempting to apply a mechanistic model like this to new data, there are a 
 2. This model was developed using a dataset containing relatively low concentrations of NTPs and Mg. Extrapolating to new input spaces should not be expected to work perfectly.
 3. There are a number of unknown unknowns when it comes to comparing the work of different researchers (analytical techniques, mixing, etc..)
 
-In the face of all of this uncertainity, our reccomendation of how best to use this tool is as follows:
+In the face of all of this uncertainity, our recomendation of how best to use this tool is as follows:
 1. First, attempt to predict your data using the original parameters estimated in our work. If the model does a good job of describing the data, you can consider using the model as a tool for hypothesis testing (in the local range of data inputs that you have - again, you should not expect the model to be accurate in extrapolation). 
 2. If the model poorly predicts results or predicts with extremely high uncertainty, follow the fine tuning procedure.
 3. If fine tuning results in good fits for the entirity of the dataset (your new data + the original data) you can consider using it as a platform for hypothesis testing (again, while avoiding extrapolation)
