@@ -2,7 +2,7 @@
 
 A mechanistic model for predicting reaction rates, RNA yields, and the presence of magnesium pyrophosphate crystallization in the in vitro transcription (IVT) reaction. While this is written in the Julia programming language, it is designed to be generally usable without a specific background in Julia or programming in general. The formulation and parameter estimation of the model is outlined in the publication:
 
-Stover, N. M., Ganko, K., & Braatz,R. D. (2024). Mechanistic modeling of in vitro transcriptionincorporating effects of magnesium pyrophosphatecrystallization.Biotechnology and Bioengineering,1–12.https://doi.org/10.1002/bit.2869912|STOVERET AL.
+Stover, N. M., Ganko, K., & Braatz, R. D. (2024). Mechanistic modeling of in vitro transcription incorporating effects of magnesium pyrophosphate crystallization. Biotechnology and Bioengineering,1–12. https://doi.org/10.1002/bit.28699
 
 Specifically, this model simulates yields of the IVT reaction as a function of the following inputs:
 1. T7 RNAP concentration
