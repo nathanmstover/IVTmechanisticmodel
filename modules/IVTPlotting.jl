@@ -53,7 +53,7 @@ function plotfromcsv(model,paramslist,parametercovariancematrix,filename; kwargs
 end
 
 
-function plotdata(model,paramslist,parametercovariancematrix,data;labels = [], range = 1:size(data)[1], plotsize = (400,400), multiplot = true, maximumyield=true, multiplemaximum = false,plotsplit = (0,0),dataerrorbars = false,mcuncertainty = true, nmc = 1000)
+function plotdata(model,paramslist,parametercovariancematrix,data;labels = [], range = 1:size(data)[1], plotsize = (400,400), multiplot = true, maximumyield=true, multiplemaximum = false,plotsplit = (0,0),dataerrorbars = false,mcuncertainty = true, nmc = 1000, markersize = 3)
     params = fullparameterset(model,paramslist)
     
     #Multiplot creates a set of plot windows. Turning multiplot off plots everything in the same window.
@@ -112,11 +112,17 @@ function plotdata(model,paramslist,parametercovariancematrix,data;labels = [], r
         end
 
         if speciesindex == 2
+            speciesoutputfunction = sol -> sol[speciesindex,:]
             scalingfactor = 1e6
             y_label = "RNA Yield (μM)"
-        else
+        elseif speciesindex != 11
+            speciesoutputfunction = sol -> sol[speciesindex,:]
             scalingfactor = 1e3
             y_label = "Concentration (mM)"
+        else
+            speciesoutputfunction = sol -> -log10.(sol[speciesindex,:])
+            scalingfactor = 1
+            y_label = "pH"
         end
         
 
@@ -125,7 +131,7 @@ function plotdata(model,paramslist,parametercovariancematrix,data;labels = [], r
         inputs =(T7RNAP = T7RNAP, ATP = ATP,UTP = UTP,CTP = CTP,GTP = GTP, Mg = Mg, Buffer = Buffer, DNA = DNA, final_time = 1.2*maximum(times))
     
         sol = runDAE_batch(params, inputs, PPiase = PPiase, stoich = stoich, Cap = Cap)
-        plot!(sol.t,(sol[speciesindex,:]) .* scalingfactor,color = color,label = "",linewidth =3)
+        plot!(sol.t,(speciesoutputfunction(sol)) .* scalingfactor,color = color,label = "",linewidth =3)
 
         tvals = sol.t
         maximumRNA = scalingfactor*min((ATP/N_A),(UTP/N_U),(CTP/N_C),(GTP/N_G))
@@ -142,7 +148,7 @@ function plotdata(model,paramslist,parametercovariancematrix,data;labels = [], r
                 sampleparams = fullparameterset(model,x)
                 sol = runDAE_batch(sampleparams, inputs, PPiase = PPiase, stoich = stoich, Cap = Cap)
                 timepointsol = sol(tvals)
-                mcensemble[i,:] = (timepointsol[speciesindex,:]) .* scalingfactor
+                mcensemble[i,:] = (speciesoutputfunction(timepointsol)) .* scalingfactor
             end
             lower_pointwise_CB = [percentile(mcensemble[:,j],100*alpha/2) for j in 1:length(tvals)]
             upper_pointwise_CB = [percentile(mcensemble[:,j],100*(1-alpha/2)) for j in 1:length(tvals)]
@@ -174,7 +180,7 @@ function plotdata(model,paramslist,parametercovariancematrix,data;labels = [], r
             label = labels[plotind]
         end
 
-        scatter!(times,yields,mc = color,markersize = 3,label = label, yerror = confint,markerstrokecolor=palette(:grays,10)[3])
+        scatter!(times,yields,mc = color,markersize = markersize,label = label, yerror = confint,markerstrokecolor=palette(:grays,10)[3])
         if multiplot
             pltvec[plotind] = plt
         end

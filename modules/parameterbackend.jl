@@ -104,6 +104,7 @@ function setupmodel()
     addtoinputlist!(modelinputparameters,Parameter("K_MgPPi",10^(4.80),10^(3.80),10^(7),0.58))
     addtoinputlist!(modelinputparameters,Parameter("K_Mg2PPi",10^(2.57),10^(1.57),10^(4.8),0.58))
     addtoinputlist!(modelinputparameters,Parameter("K_MgPi",10^(1.88)))
+    addtoinputlist!(modelinputparameters,Parameter("K_HPi",10^(6.92)))
     addtoinputlist!(modelinputparameters,Parameter("Mg2PPi_eq",1.4e-5,1.4e-10,1.4e-2,0.3))
 
     return IVTmodel(modelinputparameters)

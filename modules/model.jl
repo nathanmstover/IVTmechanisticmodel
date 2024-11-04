@@ -9,7 +9,7 @@ function initialconcentrationresidual!(F, x, ptot, param)
     H = exp(x[1])
     Mg = exp(x[2])
 
-    (ions,(Chargebalance,Mgbalance)) = speciationmodel(param, ptot.NTPtot, ptot.Mgtot, ptot.Buffertot, ptot.PPitot, ptot.Pitot, H, Mg)
+    (ions,(Chargebalance,Mgbalance)) = speciationmodel(param, 0, ptot.NTPtot, ptot.Mgtot, ptot.Buffertot, ptot.PPitot, ptot.Pitot, H, Mg, ptot.Na, ptot.Cl, ptot.OAc)
     #Algebraic Equations
     # H mass balance
     F[1] = Chargebalance
@@ -24,9 +24,9 @@ end
 Take parameters and total concentration of ions, return free concentrations of H and Mg. Performs solving of nonlinear system of equations in log space. Only used for initialization of DAE.
 
 """
-function getfreeconcentrations(params::AbstractArray{T}, NTPtot, Mgtot, Buffertot, PPitot, Pitot)  where {T<:Real}
+function getfreeconcentrations(params::AbstractArray{T}, NTPtot, Mgtot, Buffertot, PPitot, Pitot, Na, Cl, OAc)  where {T<:Real}
     #Defining Parameters
-    initialtotalconcentrations = (NTPtot=NTPtot, Mgtot=Mgtot, Buffertot=Buffertot, PPitot = PPitot, Pitot = Pitot)
+    initialtotalconcentrations = (NTPtot=NTPtot, Mgtot=Mgtot, Buffertot=Buffertot, PPitot = PPitot, Pitot = Pitot, Na = Na, Cl = Cl, OAc = OAc)
     guessfreeconcentrations = zeros(T,2)
     guessfreeconcentrations += log.([1.32e-8,0.00397])
     logsolvedfreeconcentrations = nlsolve((F,x)->initialconcentrationresidual!(F, x, initialtotalconcentrations, params), guessfreeconcentrations,ftol = 1e-8)
@@ -40,8 +40,7 @@ end
 Take parameters and total concentration of ions, return concentrations of ionic species and ion equilibrium residuals for use in rate calculations and DAE solving.
 
 """
-function speciationmodel(param, NTPtot, Mgtot, Buffertot, PPitot, Pitot, H, Mg)
-    buffer_pka = 8.1
+function speciationmodel(param, RNAtotalbases, NTPtot, Mgtot, Buffertot, PPitot, Pitot, H, Mg, Na, Cl, OAc;buffer_pka = 8.1)
 
     #Dimensionless concentrations for NTP
     HNTP_dimless = H*param.K_HNTP
@@ -62,13 +61,15 @@ function speciationmodel(param, NTPtot, Mgtot, Buffertot, PPitot, Pitot, H, Mg)
     
     #Dimensionless concentrations for Pi
     MgPi_dimless = Mg*param.K_MgPi
+    HPi_dimless = H*param.K_HPi
 
     #Solve for Anion Concentrations
     NTP = NTPtot/(1 + HNTP_dimless + HMgNTP_dimless + MgNTP_dimless + Mg2NTP_dimless)
     PPi = PPitot/(1 + MgPPi_dimless + Mg2PPi_dimless + HPPi_dimless + HMgPPi_dimless + H2PPi_dimless + H2MgPPi_dimless)
     Buffer = Buffertot/(1+HBuffer_dimless)
-    Pi = Pitot/(1+MgPi_dimless)
+    Pi = Pitot/(1+MgPi_dimless+HPi_dimless)
     OH = 10^-14/H
+
     #Redimensionalizing concentrations for NTP
     HNTP = HNTP_dimless*NTP
     HMgNTP = HMgNTP_dimless*NTP
@@ -88,15 +89,18 @@ function speciationmodel(param, NTPtot, Mgtot, Buffertot, PPitot, Pitot, H, Mg)
     
     #Redimensionalizing concentrations for Pi
     MgPi = MgPi_dimless*Pi
-    
-    Cl = 1e-8 -1e-6 + Buffertot * ((1e-8*10^buffer_pka)/(1e-8*10^buffer_pka+1)) #Cl from HCl in Buffer
+    HPi = HPi_dimless*Pi
 
     #Algebraic Equations
     #Change balance
-    Chargebalance  = 1-(Cl+OH)/(H+HBuffer)
+    #total charge equations (correct but slower)
+    negativecharge = OAc+Cl+OH+4*NTP+4*PPi+2*Pi+3*HNTP+HMgNTP+2*MgNTP+3*HPPi+HMgPPi+2*H2PPi+2*MgPPi+HPi+RNAtotalbases
+    positivecharge = H+HBuffer+Na+2*Mg
+
+    Chargebalance  = 1-(negativecharge)/(positivecharge)
     # Mg mass balance
     Mgbalance = 1 - (1/(Mgtot)) * (Mg + MgPPi + HMgPPi + MgNTP + 2*Mg2NTP + 2*Mg2PPi + HMgNTP + H2MgPPi + MgPi)
-    
+
     ionspecies = (Mg,MgNTP,MgPPi,Mg2PPi)
     balances = (Chargebalance,Mgbalance)
     return (ionspecies,balances)
@@ -110,12 +114,12 @@ Take parameters and concentration of all species (total and free ions), return r
 """
 function ratesmodel(param,stoich,species)
     #Species common to all reactors
-    (DNAtot, RNAtot, PPitot, ATPtot, UTPtot, CTPtot, GTPtot, Mgtot, Nuctot, Pitot, H, Mg, Buffertot, RNAPtot, PPiasetot, Captot) = species
+    (DNAtot, RNAtot, PPitot, ATPtot, UTPtot, CTPtot, GTPtot, Mgtot, Nuctot, Pitot, H, Mg, Buffertot, RNAPtot, PPiasetot, Captot, Na, Cl, OAc) = species
     NTPtot = ATPtot + UTPtot + CTPtot + GTPtot + Captot
 
     #Using speciation model to calculate complex concentrations
-
-    (ions,balances) = speciationmodel(param, NTPtot, Mgtot, Buffertot, PPitot, Pitot, H, Mg)
+    RNAtotalbases = RNAtot*(sum(stoich)+2)
+    (ions,balances) = speciationmodel(param, RNAtotalbases, NTPtot, Mgtot, Buffertot, PPitot, Pitot, H, Mg, Na, Cl, OAc)
 
     (Mg,MgNTP,MgPPi,Mg2PPi) = ions
 
@@ -211,16 +215,21 @@ end
 
 Take parameters and reaction inputs and run DAE model of IVT. Returns solution object.
 """
-function runDAE_batch(params::AbstractArray{T1}, inputs; saveevery = true, stoich = SVector(231, 246, 189, 202), PPi = 1e-18, PPiase = 0.0, Cap = 0, Pi = 1e-18, Nuc = 0, RNA = 0, tol = 1e-6, init_time = 0.0) where {T1<:Number}
+function runDAE_batch(params::AbstractArray{T1}, inputs; saveevery = true, stoich = SVector(231, 246, 189, 202), PPi = 1e-18, PPiase = 0.0, Cap = 0, Pi = 1e-18, Nuc = 0, RNA = 0, tol = 1e-6, init_time = 0.0, bufferpKa = 8.1, NaperNTP = 3.96) where {T1<:Number}
     #Generate initialization
+    NTPtot = inputs.ATP+inputs.UTP+inputs.CTP+inputs.GTP
+    Na = NaperNTP*NTPtot
+    OAc = 2*inputs.Mg
+    Cl = inputs.Buffer*((1e-8*10^bufferpKa)/(1e-8*10^bufferpKa+1)) #Cl from HCl in Buffer - remove if using HEPES   note: removed 1e-8 -1e-6
+
     nstatevars = 10
     nalgebraicvars = 2
     ntotalvars =  nstatevars+nalgebraicvars
     initial = zeros(T1,ntotalvars)
     initial[1:nstatevars] = [inputs.DNA,RNA,PPi,inputs.ATP,inputs.UTP,inputs.CTP,inputs.GTP,inputs.Mg,Nuc,Pi]
     NTPtot = inputs.ATP + inputs.UTP + inputs.CTP + inputs.GTP + Cap
-    initial[(nstatevars+1):ntotalvars] = getfreeconcentrations(params, NTPtot, inputs.Mg, inputs.Buffer, PPi, Pi)
-    constantspecies = [inputs.Buffer, inputs.T7RNAP, PPiase, Cap]
+    initial[(nstatevars+1):ntotalvars] = getfreeconcentrations(params, NTPtot, inputs.Mg, inputs.Buffer, PPi, Pi, Na, Cl, OAc)
+    constantspecies = [inputs.Buffer, inputs.T7RNAP, PPiase, Cap, Na, Cl, OAc]
 
     #Run DAE and get solution object
     M = zeros(ntotalvars,ntotalvars)
